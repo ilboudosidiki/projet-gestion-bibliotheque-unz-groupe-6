@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Emprunts - Bibliothèque UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <style>
+        .nav-tabs .nav-link {
+            color: #1a237e !important;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #1a237e !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .tab-content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+    </script>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 Bibliothèque UNZ</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/catalogue">Catalogue</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/emprunts">Mes Emprunts</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/reservations">Réservations</a></li>
+                    <li class="nav-item" id="navAdmin" style="display:none"><a class="nav-link" href="/admin">⚙️ Administration</a></li>
+
+                </ul>
+                <span class="nav-link text-light" id="userDisplay"></span>
+                <a class="nav-link" href="#" onclick="logout()">Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h3>📋 Mes Emprunts</h3>
+        <p class="text-muted">Gérez vos emprunts en cours et consultez votre historique</p>
+
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#enCours">📖 En cours</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#historique">🕐 Historique</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="enCours">
+                <div id="empruntsEnCours">
+                    <div class="text-center py-5">
+                        <div class="loading"></div>
+                        <p class="mt-2">Chargement de vos emprunts...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="historique">
+                <div id="historiqueEmprunts">
+                    <div class="text-center py-5">
+                        <div class="loading"></div>
+                        <p class="mt-2">Chargement de l'historique...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="prolongerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Prolonger l'emprunt</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Voulez-vous prolonger cet emprunt de <strong>7 jours</strong> ?</p>
+                    <p class="text-muted">La prolongation est possible une seule fois et seulement si le livre n'est pas réservé.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmerProlongation()">Confirmer la prolongation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userDisplay').textContent = '👤 ' + (currentUser.nom || 'Utilisateur');
+        let empruntAprolonger = null;
+
+        async function chargerEmpruntsEnCours() {
+            try {
+                const response = await fetch('/api/emprunts/etudiant/1/en-cours', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                const emprunts = await response.json();
+                
+                let html = '';
+                if (emprunts.length === 0) {
+                    html = `
+                        <div class="alert alert-info">
+                            <h5>📖 Aucun emprunt en cours</h5>
+                            <p>Rendez-vous dans le <a href="/catalogue">catalogue</a> pour emprunter des livres.</p>
+                        </div>`;
+                } else {
+                    emprunts.forEach(e => {
+                        const dateRetour = new Date(e.dateRetourPrevue);
+                        const aujourdhui = new Date();
+                        const joursRestants = Math.ceil((dateRetour - aujourdhui) / (1000 * 60 * 60 * 24));
+                        
+                        let alerte = '';
+                        let badgeUrgence = '';
+                        if (joursRestants <= 0) {
+                            alerte = '<div class="alert alert-danger">⚠️ En retard !</div>';
+                            badgeUrgence = 'bg-danger';
+                        } else if (joursRestants <= 3) {
+                            alerte = '<div class="alert alert-warning">⚠️ Retour imminent !</div>';
+                            badgeUrgence = 'bg-warning';
+                        } else {
+                            badgeUrgence = 'bg-success';
+                        }
+                        
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    ${alerte}
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h5>📖 ${e.titreOuvrage}</h5>
+                                            <p class="text-muted">Exemplaire : ${e.codeBarresExemplaire} | Rayon : ${e.rayon}</p>
+                                            <p>📅 Emprunté le : <strong>${new Date(e.dateDebut).toLocaleDateString('fr-FR')}</strong></p>
+                                            <p>📅 Retour prévu le : <strong>${dateRetour.toLocaleDateString('fr-FR')}</strong></p>
+                                            <span class="badge ${badgeUrgence}">${joursRestants > 0 ? joursRestants + ' jour(s) restant(s)' : 'En retard'}</span>
+                                            <span class="badge bg-primary">${e.statut}</span>
+                                        </div>
+                                        <div class="col-md-4 text-end align-self-center">
+                                            ${joursRestants > 0 ? 
+                                                `<button class="btn btn-outline-primary" onclick="ouvrirProlongation(${e.id})">
+                                                    ⏱️ Prolonger (7 jours)
+                                                </button>` : 
+                                                `<span class="text-danger">Prolongation impossible</span>`
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                }
+                document.getElementById('empruntsEnCours').innerHTML = html;
+            } catch(e) {
+                document.getElementById('empruntsEnCours').innerHTML = 
+                    '<div class="alert alert-danger">Erreur de chargement des emprunts</div>';
+            }
+        }
+
+        async function chargerHistorique() {
+            try {
+                const response = await fetch('/api/emprunts/etudiant/1/historique', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                const emprunts = await response.json();
+                
+                let html = '';
+                if (emprunts.length === 0) {
+                    html = '<div class="alert alert-info">Aucun historique d\'emprunt</div>';
+                } else {
+                    html = '<div class="table-responsive"><table class="table"><thead><tr><th>Ouvrage</th><th>Date emprunt</th><th>Date retour</th><th>Statut</th><th>Retard</th></tr></thead><tbody>';
+                    emprunts.forEach(e => {
+                        const statutClass = e.statut === 'RETOURNE' ? 'success' : 
+                                           e.statut === 'EN_COURS' ? 'primary' : 'secondary';
+                        html += `
+                            <tr>
+                                <td><strong>${e.titreOuvrage}</strong></td>
+                                <td>${new Date(e.dateDebut).toLocaleDateString('fr-FR')}</td>
+                                <td>${e.dateRetourEffective ? new Date(e.dateRetourEffective).toLocaleDateString('fr-FR') : 'En cours'}</td>
+                                <td><span class="badge bg-${statutClass}">${e.statut}</span></td>
+                                <td>${e.retard > 0 ? '<span class="text-danger fw-bold">' + e.retard + ' jour(s)</span>' : '<span class="text-success">Aucun</span>'}</td>
+                            </tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                }
+                document.getElementById('historiqueEmprunts').innerHTML = html;
+            } catch(e) {
+                document.getElementById('historiqueEmprunts').innerHTML = 
+                    '<div class="alert alert-danger">Erreur de chargement</div>';
+            }
+        }
+
+        function ouvrirProlongation(empruntId) {
+            empruntAprolonger = empruntId;
+            new bootstrap.Modal(document.getElementById('prolongerModal')).show();
+        }
+
+        async function confirmerProlongation() {
+            try {
+                const response = await fetch('/api/emprunts/' + empruntAprolonger + '/prolonger', {
+                    method: 'PUT',
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                if (response.ok) {
+                    alert('✅ Emprunt prolongé de 7 jours !');
+                    bootstrap.Modal.getInstance(document.getElementById('prolongerModal')).hide();
+                    chargerEmpruntsEnCours();
+                } else {
+                    alert('❌ Prolongation impossible (déjà prolongé ou livre réservé)');
+                }
+            } catch(e) {
+                alert('Erreur lors de la prolongation');
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        chargerEmpruntsEnCours();
+        chargerHistorique();
+    </script>
+</body>
+</html>

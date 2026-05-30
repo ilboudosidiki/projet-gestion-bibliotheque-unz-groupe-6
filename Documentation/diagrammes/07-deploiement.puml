@@ -1,0 +1,48 @@
+@startuml
+skinparam nodeFontSize 12
+skinparam nodeFontStyle bold
+
+title Diagramme de Déploiement - Plateforme Render
+
+cloud "Internet" as internet
+
+node "Navigateur Web" as browser {
+  component "Interface Responsive\n(HTML/CSS/JS)"
+}
+
+node "Render Cloud" as render {
+  
+  node "Web Service\n(Spring Boot)" as web {
+    component "API REST\n(Controllers)"
+    component "Services\nMétier"
+    component "Spring Security\n(JWT)"
+  }
+  
+  node "Base de données\n(MySQL)" as db {
+    database "bibliotheque_db" as database
+  }
+  
+  node "File System" as fs {
+    component "Logs\napplicatifs"
+  }
+}
+
+node "Service Externe" as smtp {
+  component "Serveur SMTP\n(Gmail/Outlook)\nNotifications Email"
+}
+
+internet -- browser : HTTPS
+browser -- web : HTTPS (port 443)\nAPI REST
+web -- db : JDBC (port 3306)\nInterne Render
+web -- smtp : SMTP (port 587)\nEnvoi d'emails
+web -- fs : Écriture\nlocale
+
+note right of render
+  **Plan Gratuit Render :**
+  - Web Service : 512 MB RAM
+  - MySQL : 1 GB stockage
+  - Arrêt après 15 min d'inactivité
+  - Redémarrage automatique
+end note
+
+@enduml

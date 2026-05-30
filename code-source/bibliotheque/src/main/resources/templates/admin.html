@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Bibliothèque UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <style>
+        .nav-tabs .nav-link {
+            color: #1a237e !important;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #1a237e !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .tab-content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+        const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.role !== 'ADMINISTRATEUR') {
+            window.location.href = '/';
+        }
+    </script>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">⚙️ Administration UNZ</a>
+            <div class="navbar-nav ms-auto">
+                <span class="nav-link text-light" id="userDisplay"></span>
+                <a class="nav-link" href="/catalogue">Catalogue</a>
+                <a class="nav-link" href="#" onclick="logout()">Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <ul class="nav nav-tabs mb-4" id="adminTabs">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dashboard">📊 Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#utilisateurs">👥 Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ouvrages">📚 Ouvrages</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#emprunts">📋 Emprunts</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="dashboard">
+                <div class="row" id="statsCards"></div>
+            </div>
+
+            <div class="tab-pane fade" id="utilisateurs">
+                <h4>Gestion des utilisateurs</h4>
+                <div class="table-responsive" id="tableUtilisateurs"></div>
+            </div>
+
+            <div class="tab-pane fade" id="ouvrages">
+                <h4>Ajouter un ouvrage</h4>
+                <form onsubmit="ajouterOuvrage(event)" class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <input type="text" id="isbn" class="form-control" placeholder="ISBN" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="titre" class="form-control" placeholder="Titre" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="auteur" class="form-control" placeholder="Auteur" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
+                    </div>
+                </form>
+                <div id="messageOuvrage"></div>
+                <div class="table-responsive" id="tableOuvrages"></div>
+            </div>
+
+            <div class="tab-pane fade" id="emprunts">
+                <h4>Tous les emprunts</h4>
+                <div class="table-responsive" id="tableEmprunts"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userDisplay').textContent = '👤 ' + (user.nom || 'Admin');
+
+        async function chargerDashboard() {
+            const [usersRes, ouvragesRes] = await Promise.all([
+                fetch('/api/admin/utilisateurs', {headers: {'Authorization': 'Bearer ' + token}}),
+                fetch('/api/ouvrages')
+            ]);
+            const users = await usersRes.json();
+            const ouvrages = await ouvragesRes.json();
+            
+            const stats = [
+                {title: 'Utilisateurs', value: users.length, color: 'primary', icon: '👥'},
+                {title: 'Ouvrages', value: ouvrages.length, color: 'success', icon: '📚'},
+                {title: 'Exemplaires', value: ouvrages.reduce((s,o) => s + o.nbExemplairesTotal, 0), color: 'info', icon: '📖'},
+                {title: 'Disponibles', value: ouvrages.reduce((s,o) => s + o.nbExemplairesDisponibles, 0), color: 'warning', icon: '✅'}
+            ];
+            
+            document.getElementById('statsCards').innerHTML = stats.map(s => `
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card bg-${s.color}">
+                        <div class="icon">${s.icon}</div>
+                        <div class="number">${s.value}</div>
+                        <div class="label">${s.title}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function chargerUtilisateurs() {
+            const response = await fetch('/api/admin/utilisateurs', {
+                headers: {'Authorization': 'Bearer ' + token}
+            });
+            const users = await response.json();
+            document.getElementById('tableUtilisateurs').innerHTML = `
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
+                    <tbody>${users.map(u => `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.nom} ${u.prenom}</td>
+                            <td>${u.email}</td>
+                            <td><span class="badge bg-primary">${u.role}</span></td>
+                            <td><span class="badge bg-${u.estActif ? 'success' : 'danger'}">${u.estActif ? 'Actif' : 'Inactif'}</span></td>
+                            <td><button class="btn btn-sm btn-danger" onclick="supprimerUser(${u.id})">🗑️</button></td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table>`;
+        }
+
+        async function ajouterOuvrage(e) {
+            e.preventDefault();
+            const response = await fetch('/api/ouvrages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    isbn: document.getElementById('isbn').value,
+                    titre: document.getElementById('titre').value,
+                    auteur: document.getElementById('auteur').value,
+                    resume: '', motsCles: '', datePublication: new Date().toISOString().split('T')[0]
+                })
+            });
+            if (response.ok) {
+                document.getElementById('messageOuvrage').innerHTML = 
+                    '<div class="alert alert-success">Ouvrage ajouté avec succès !</div>';
+                document.getElementById('isbn').value = '';
+                document.getElementById('titre').value = '';
+                document.getElementById('auteur').value = '';
+                chargerOuvrages();
+            }
+        }
+
+        async function chargerOuvrages() {
+            const response = await fetch('/api/ouvrages');
+            const ouvrages = await response.json();
+            document.getElementById('tableOuvrages').innerHTML = `
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Titre</th><th>Auteur</th><th>ISBN</th><th>Exemplaires</th><th>Disponibles</th></tr></thead>
+                    <tbody>${ouvrages.map(o => `
+                        <tr>
+                            <td>${o.id}</td>
+                            <td>${o.titre}</td>
+                            <td>${o.auteur}</td>
+                            <td>${o.isbn}</td>
+                            <td>${o.nbExemplairesTotal}</td>
+                            <td><span class="badge bg-${o.disponible ? 'success' : 'danger'}">${o.nbExemplairesDisponibles}</span></td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table>`;
+        }
+
+        async function supprimerUser(id) {
+            if (confirm('Supprimer cet utilisateur ?')) {
+                await fetch('/api/admin/utilisateurs/' + id, {
+                    method: 'DELETE',
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                chargerUtilisateurs();
+                chargerDashboard();
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        chargerDashboard();
+        chargerUtilisateurs();
+        chargerOuvrages();
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothèque Universitaire - UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 Bibliothèque UNZ</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/catalogue">Catalogue</a></li>
+                    <li class="nav-item" id="navEmprunts" style="display:none"><a class="nav-link" href="/emprunts">Mes Emprunts</a></li>
+                    <li class="nav-item" id="navReservations" style="display:none"><a class="nav-link" href="/reservations">Réservations</a></li>
+                    <li class="nav-item" id="navLogin"><a class="nav-link" href="/login">Connexion</a></li>
+                    <li class="nav-item" id="navRegister"><a class="nav-link" href="/register">Inscription</a></li>
+                    <li class="nav-item" id="navUser" style="display:none">
+                        <span class="nav-link" id="userDisplay"></span>
+                    </li>
+                    <li class="nav-item" id="navLogout" style="display:none">
+                        <a class="nav-link" href="#" onclick="logout()">Déconnexion</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/apropos">ℹ️ À propos</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>📖 Bibliothèque Universitaire</h1>
+            <p>Université Norbert Zongo - Koudougou</p>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Rechercher un livre, un auteur, un mot-clé..." 
+                       onkeypress="if(event.key==='Enter') rechercher()">
+                <button onclick="rechercher()">🔍 Rechercher</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-primary">
+                    <div class="number" id="countOuvrages">-</div>
+                    <div class="label">Ouvrages</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-success">
+                    <div class="number" id="countDisponibles">-</div>
+                    <div class="label">Disponibles</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-warning">
+                    <div class="number" id="countEmpruntes">-</div>
+                    <div class="label">Empruntés</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-info">
+                    <div class="number" id="countCategories">-</div>
+                    <div class="label">Catégories</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-4">Résultats de recherche</h3>
+        <div id="results"></div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Bibliothèque Universitaire - Université Norbert Zongo</p>
+            <p>Projet Génie Logiciel - Licence 3 Informatique</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        function updateNav() {
+            if (token && user.role) {
+                document.getElementById('navLogin').style.display = 'none';
+                document.getElementById('navRegister').style.display = 'none';
+                document.getElementById('navEmprunts').style.display = 'block';
+                document.getElementById('navReservations').style.display = 'block';
+                document.getElementById('navUser').style.display = 'block';
+                document.getElementById('navLogout').style.display = 'block';
+                document.getElementById('userDisplay').textContent = '👤 ' + user.nom;
+            }
+        }
+
+        async function chargerStats() {
+            try {
+                const response = await fetch('/api/ouvrages');
+                const ouvrages = await response.json();
+                document.getElementById('countOuvrages').textContent = ouvrages.length;
+                
+                let disponibles = 0;
+                ouvrages.forEach(o => { disponibles += o.nbExemplairesDisponibles; });
+                document.getElementById('countDisponibles').textContent = disponibles;
+                document.getElementById('countEmpruntes').textContent = 
+                    ouvrages.reduce((sum, o) => sum + o.nbExemplairesTotal, 0) - disponibles;
+                document.getElementById('countCategories').textContent = 
+                    new Set(ouvrages.map(o => o.categorie).filter(Boolean)).size;
+            } catch(e) {
+                console.log('Stats non disponibles');
+            }
+        }
+
+        async function rechercher() {
+            const motCle = document.getElementById('searchInput').value.trim();
+            if (!motCle) return;
+            
+            document.getElementById('results').innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch('/api/ouvrages/recherche?motCle=' + encodeURIComponent(motCle));
+                const ouvrages = await response.json();
+                
+                let html = '';
+                if (ouvrages.length === 0) {
+                    html = `
+                        <div class="alert alert-warning">
+                            <h5>Aucun résultat trouvé pour "${motCle}"</h5>
+                            <p>Essayez avec d'autres mots-clés comme le titre, l'auteur ou la catégorie.</p>
+                        </div>`;
+                } else {
+                    html = `<p class="text-muted">${ouvrages.length} résultat(s) trouvé(s)</p>`;
+                    ouvrages.forEach(o => {
+                        html += `
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h5>${o.titre}</h5>
+                                            <p class="text-muted">par ${o.auteur}</p>
+                                            <p>ISBN : ${o.isbn}</p>
+                                            ${o.categorie ? `<span class="badge bg-secondary">${o.categorie}</span>` : ''}
+                                            <span class="badge bg-${o.disponible ? 'success' : 'danger'}">
+                                                ${o.disponible ? '✅ Disponible' : '❌ Indisponible'}
+                                            </span>
+                                            <span class="badge bg-info">${o.nbExemplairesDisponibles} sur ${o.nbExemplairesTotal} disponible(s)</span>
+                                        </div>
+                                        <div class="col-md-4 text-end align-self-center">
+                                            ${token ? 
+                                                (o.disponible ? 
+                                                    `<button class="btn btn-primary" onclick="emprunter(${o.id})">📥 Emprunter</button>` :
+                                                    `<button class="btn btn-warning" onclick="reserver(${o.id})">📌 Réserver</button>`) :
+                                                `<a href="/login" class="btn btn-outline-primary">Connectez-vous pour emprunter</a>`
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                }
+                document.getElementById('results').innerHTML = html;
+            } catch(e) {
+                document.getElementById('results').innerHTML = 
+                    '<div class="alert alert-danger">Erreur lors de la recherche</div>';
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        updateNav();
+        chargerStats();
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>À propos - Bibliothèque UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .team-card {
+            text-align: center;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        .team-card:hover {
+            transform: translateY(-10px);
+        }
+        .team-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a237e, #534bae);
+            color: white;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .tech-badge {
+            display: inline-block;
+            background: #1a237e;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 Bibliothèque UNZ</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/catalogue">Catalogue</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/apropos">À propos</a></li>
+                </ul>
+                <span class="nav-link text-light" id="userDisplay"></span>
+                <span id="navLinks"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero" style="padding: 2rem 0;">
+        <div class="container">
+            <h1>À propos du projet</h1>
+            <p>Application de Gestion de Bibliothèque Universitaire</p>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row mb-5">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h3>🎯 Objectif du projet</h3>
+                        <p>Ce projet a été réalisé dans le cadre du cours de <strong>Génie Logiciel</strong> en Licence 3 Informatique à l'Université Norbert Zongo.</p>
+                        <p>L'objectif est de concevoir et développer une application web complète de gestion de bibliothèque universitaire en appliquant les concepts du Génie Logiciel : analyse des exigences, modélisation UML, conception architecturale, principes SOLID, Design Patterns, méthodologie Agile Scrum, et tests logiciels.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-center mb-4">🛠️ Technologies utilisées</h3>
+        <div class="text-center mb-5">
+            <span class="tech-badge">Java 17</span>
+            <span class="tech-badge">Spring Boot 4.0.6</span>
+            <span class="tech-badge">PostgreSQL</span>
+            <span class="tech-badge">Spring Data JPA</span>
+            <span class="tech-badge">Hibernate</span>
+            <span class="tech-badge">Spring Security</span>
+            <span class="tech-badge">JWT</span>
+            <span class="tech-badge">Thymeleaf</span>
+            <span class="tech-badge">Bootstrap 5</span>
+            <span class="tech-badge">HTML5 / CSS3</span>
+            <span class="tech-badge">JavaScript</span>
+            <span class="tech-badge">JUnit 5</span>
+            <span class="tech-badge">Mockito</span>
+            <span class="tech-badge">Git / GitHub</span>
+            <span class="tech-badge">Maven</span>
+        </div>
+
+        <h3 class="text-center mb-4">📐 Design Patterns</h3>
+        <div class="row mb-5">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>Repository</h5><p>Abstraction de la persistance des données</p></div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>DTO</h5><p>Séparation entre entités et objets exposés</p></div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>Singleton</h5><p>Beans Spring gérés par le conteneur IoC</p></div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>Observer</h5><p>Spring Events pour le découplage</p></div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>Template Method</h5><p>Méthode abstraite dans Utilisateur</p></div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100"><div class="card-body"><h5>Factory Method</h5><p>Création encapsulée des pénalités</p></div></div>
+            </div>
+        </div>
+
+        <h3 class="text-center mb-4">👥 Équipe projet</h3>
+        <div class="row mb-5">
+            <div class="col-md-4 mb-3">
+                <div class="card team-card"><div class="card-body">
+                    <div class="team-avatar">SM</div>
+                    <h5>Scrum Master</h5>
+                    <p class="text-muted">Facilitation et suivi Agile</p>
+                </div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card team-card"><div class="card-body">
+                    <div class="team-avatar">PO</div>
+                    <h5>Product Owner</h5>
+                    <p class="text-muted">Backlog et priorisation</p>
+                </div></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card team-card"><div class="card-body">
+                    <div class="team-avatar">👨‍💻</div>
+                    <h5>Développeurs (x4)</h5>
+                    <p class="text-muted">Backend, Frontend, Tests</p>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h3>📞 Contact</h3>
+                        <p><strong>Université Norbert Zongo</strong></p>
+                        <p>📍 Koudougou, Burkina Faso</p>
+                        <p>📧 Enseignant : Dr OUEDRAOGO Moïse</p>
+                        <p>📅 Projet réalisé en Mai 2026</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Bibliothèque Universitaire - Université Norbert Zongo</p>
+            <p>Projet Génie Logiciel - Licence 3 Informatique</p>
+        </div>
+    </footer>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (currentUser.nom) {
+            document.getElementById('userDisplay').textContent = '👤 ' + currentUser.nom;
+            document.getElementById('navLinks').innerHTML = '<a class="nav-link" href="#" onclick="logout()">🚪 Déconnexion</a>';
+        } else {
+            document.getElementById('navLinks').innerHTML = '<a class="nav-link" href="/login">Connexion</a>';
+        }
+        function logout() { localStorage.clear(); window.location.href = '/'; }
+    </script>
+</body>
+</html>

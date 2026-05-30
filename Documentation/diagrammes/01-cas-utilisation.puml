@@ -1,0 +1,63 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Visiteur" as Visiteur
+actor "Étudiant" as Etudiant
+actor "Bibliothécaire" as Bibliothecaire
+actor "Administrateur" as Admin
+
+Visiteur <|-- Etudiant
+
+rectangle "Système de Gestion de Bibliothèque Universitaire" {
+  
+  usecase "Rechercher un ouvrage\n(mots-clés)" as UC01
+  usecase "Recherche avancée\n(filtres précis)" as UC02
+  usecase "Consulter le statut\net emplacement" as UC03
+  usecase "S'inscrire" as UC14
+  usecase "S'authentifier" as UC15
+  
+  usecase "Emprunter un ouvrage" as UC04
+  usecase "Consulter historique\nd'emprunts" as UC06
+  usecase "Recevoir notification" as UC20
+  
+  usecase "Prolonger un emprunt\n(7 jours)" as UC05
+  usecase "Réserver un ouvrage\nindisponible" as UC08
+  
+  usecase "Valider emprunts\net retours" as UC07
+  usecase "Gérer le catalogue\n(CRUD ouvrages)" as UC17
+  
+  usecase "Calculer les pénalités\nde retard" as UC11
+  usecase "Bloquer/Débloquer\ncompte étudiant" as UC12
+  usecase "Gérer les comptes\nutilisateurs" as UC16
+  usecase "Générer des rapports\net statistiques" as UC18
+
+  UC07 ..> UC11 : <<include>>
+  UC07 ..> UC20 : <<include>>
+  UC11 ..> UC12 : <<include>>
+  UC08 ..> UC20 : <<include>>
+  
+  UC05 ..> UC04 : <<extend>>
+  UC08 ..> UC04 : <<extend>>
+  UC12 ..> UC04 : <<extend>>
+  UC12 ..> UC08 : <<extend>>
+}
+
+Visiteur --> UC01
+Visiteur --> UC02
+Visiteur --> UC03
+Visiteur --> UC14
+Visiteur --> UC15
+
+Etudiant --> UC04
+Etudiant --> UC06
+Etudiant --> UC20
+
+Bibliothecaire --> UC07
+Bibliothecaire --> UC17
+
+Admin --> UC16
+Admin --> UC18
+Admin --> UC12
+
+@enduml

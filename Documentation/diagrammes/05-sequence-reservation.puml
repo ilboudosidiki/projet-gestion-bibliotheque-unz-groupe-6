@@ -1,0 +1,83 @@
+@startuml
+skinparam sequenceMessageAlign center
+
+title Réserver un ouvrage indisponible - UC08 + UC20 (FIFO)
+
+actor "Étudiant" as E
+participant "Interface Web" as UI
+participant "ReservationController" as RC
+participant "ReservationService" as RS
+participant "EtudiantService" as ES
+participant "EmpruntService" as EMS
+participant "OuvrageService" as OS
+database "Base de données" as DB
+
+E -> UI : Consulte un ouvrage\n(stock = 0, "Indisponible")
+activate UI
+UI -> UI : Affiche bouton "Réserver"
+
+E -> UI : Clique sur "Réserver"
+UI -> RC : POST /reservations\n{idEtudiant, idOuvrage}
+activate RC
+
+== Vérification 1 : Suspension ==
+
+RC -> ES : estSuspendu(idEtudiant)
+activate ES
+ES -> DB : SELECT dateFinSuspension\nFROM Etudiant WHERE id = ?
+DB --> ES : null
+ES --> RC : false (compte actif)
+deactivate ES
+
+== Vérification 2 : Pas déjà en possession ==
+
+RC -> EMS : possedeDejaOuvrage(idEtudiant,\nidOuvrage)
+activate EMS
+EMS -> DB : SELECT COUNT(*) FROM Emprunt e\nJOIN Exemplaire ex\nON e.exemplaire_id = ex.id\nWHERE e.etudiant_id = ?\nAND ex.ouvrage_id = ?\nAND e.statut = 'EN_COURS'
+DB --> EMS : 0
+EMS --> RC : false
+deactivate EMS
+
+== Vérification 3 : Pas déjà dans la file ==
+
+RC -> RS : estDejaDansFile(idEtudiant,\nidOuvrage)
+activate RS
+RS -> DB : SELECT COUNT(*) FROM Reservation\nWHERE etudiant_id = ?\nAND ouvrage_id = ?\nAND statut = 'EN_ATTENTE'
+DB --> RS : 0
+RS --> RC : false
+deactivate RS
+
+== Vérification 4 : Stock confirmé à zéro ==
+
+RC -> OS : getNbExemplairesDisponibles\n(idOuvrage)
+activate OS
+OS -> DB : SELECT COUNT(*) FROM Exemplaire\nWHERE ouvrage_id = ?\nAND statut = 'DISPONIBLE'
+DB --> OS : 0
+OS --> RC : stock = 0
+deactivate OS
+
+== Création de la réservation ==
+
+RC -> RS : creerReservation(idEtudiant,\nidOuvrage)
+activate RS
+
+RS -> DB : INSERT INTO Reservation\n(etudiant_id, ouvrage_id,\ndateReservation, statut)\nVALUES (?, ?, NOW(),\n'EN_ATTENTE')
+DB --> RS : OK
+
+== Calcul de la position FIFO ==
+
+RS -> DB : SELECT COUNT(*) FROM Reservation\nWHERE ouvrage_id = ?\nAND statut = 'EN_ATTENTE'\nAND dateReservation <= ?
+DB --> RS : 3
+
+RS -> RS : positionFile = 3
+
+RS --> RC : Réservation créée (position 3/3)
+deactivate RS
+
+RC --> UI : 201 Created\n{idReservation, position: 3}
+deactivate RC
+
+UI --> E : "Réservation enregistrée !\nPosition dans la file : 3/3\nVous serez notifié par email\nquand le livre sera disponible."
+deactivate UI
+
+@enduml

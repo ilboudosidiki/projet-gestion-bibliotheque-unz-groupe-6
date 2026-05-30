@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Bibliothécaire - UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .nav-tabs .nav-link { color: #1a237e !important; font-weight: 500; }
+        .nav-tabs .nav-link.active { background-color: #1a237e !important; color: white !important; font-weight: bold; }
+        .tab-content { background: white; padding: 20px; border-radius: 0 0 10px 10px; border: 1px solid #dee2e6; border-top: none; }
+        .action-btn { margin: 2px; }
+    </style>
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem('token')) { window.location.href = '/login'; }
+        const biblioUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (biblioUser.role !== 'BIBLIOTHECAIRE' && biblioUser.role !== 'ADMINISTRATEUR') { window.location.href = '/'; }
+    </script>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 Bibliothèque UNZ</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link active" href="/biblio">📋 Gestion</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/catalogue">Catalogue</a></li>
+                </ul>
+                <span class="nav-link text-light" id="userDisplay"></span>
+                <a class="nav-link" href="#" onclick="logout()">🚪 Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h3>📋 Tableau de bord - Bibliothécaire</h3>
+        <p class="text-muted">Gérez les emprunts, retours et le catalogue</p>
+
+        <div class="row mb-4" id="statsCards"></div>
+
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#emprunts">📖 Emprunts en attente</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#enCours">🔄 Emprunts en cours</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#retour">✅ Retourner un livre</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ouvrages">📚 Gérer le catalogue</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="emprunts">
+                <h5>Demandes d'emprunt à valider</h5>
+                <div id="tableDemandes"><div class="text-center py-4"><div class="loading"></div></div></div>
+            </div>
+            <div class="tab-pane fade" id="enCours">
+                <h5>Tous les emprunts en cours</h5>
+                <div id="tableEnCours"><div class="text-center py-4"><div class="loading"></div></div></div>
+            </div>
+            <div class="tab-pane fade" id="retour">
+                <h5>Enregistrer un retour</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <form onsubmit="enregistrerRetour(event)">
+                            <div class="mb-3">
+                                <label class="form-label">Code-barres de l'exemplaire</label>
+                                <input type="text" id="codeBarresRetour" class="form-control form-control-lg" 
+                                       placeholder="Scanner ou saisir le code-barres" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-100">✅ Valider le retour</button>
+                        </form>
+                        <div id="messageRetour" class="mt-3"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>📋 Procédure :</h6>
+                                <ol>
+                                    <li>Scannez le code-barres du livre</li>
+                                    <li>Le système calcule automatiquement les retards</li>
+                                    <li>Les pénalités sont appliquées si nécessaire</li>
+                                    <li>Le livre est remis en circulation</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="ouvrages">
+                <h5>Ajouter un ouvrage</h5>
+                <form onsubmit="ajouterOuvrage(event)" class="row g-3 mb-4">
+                    <div class="col-md-3"><input type="text" id="isbn" class="form-control" placeholder="ISBN" required></div>
+                    <div class="col-md-3"><input type="text" id="titre" class="form-control" placeholder="Titre" required></div>
+                    <div class="col-md-3"><input type="text" id="auteur" class="form-control" placeholder="Auteur" required></div>
+                    <div class="col-md-3"><button type="submit" class="btn btn-primary w-100">➕ Ajouter</button></div>
+                </form>
+                <div id="messageOuvrage" class="mb-3"></div>
+                <h5 class="mt-4">Ajouter un exemplaire</h5>
+                <form onsubmit="ajouterExemplaire(event)" class="row g-3">
+                    <div class="col-md-3">
+                        <select id="ouvrageId" class="form-control" required><option value="">Choisir un ouvrage</option></select>
+                    </div>
+                    <div class="col-md-3"><input type="text" id="codeBarres" class="form-control" placeholder="Code-barres" required></div>
+                    <div class="col-md-3"><input type="text" id="rayon" class="form-control" placeholder="Rayon (A1, B2...)" required></div>
+                    <div class="col-md-3"><button type="submit" class="btn btn-success w-100">➕ Ajouter exemplaire</button></div>
+                </form>
+                <div id="messageExemplaire" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        document.getElementById('userDisplay').textContent = '👤 ' + (biblioUser.nom || 'Bibliothécaire');
+
+        async function chargerStats() {
+            try {
+                const [ouvragesRes, demandesRes, enCoursRes] = await Promise.all([
+                    fetch('/api/ouvrages'),
+                    fetch('/api/emprunts/tous/demandes', {headers: {'Authorization': 'Bearer ' + token}}),
+                    fetch('/api/emprunts/tous/en-cours', {headers: {'Authorization': 'Bearer ' + token}})
+                ]);
+                const ouvrages = await ouvragesRes.json();
+                const demandes = await demandesRes.json();
+                const enCours = await enCoursRes.json();
+                const totalExemplaires = ouvrages.reduce((s, o) => s + o.nbExemplairesTotal, 0);
+                const disponibles = ouvrages.reduce((s, o) => s + o.nbExemplairesDisponibles, 0);
+                
+                document.getElementById('statsCards').innerHTML = `
+                    <div class="col-md-3"><div class="stat-card bg-primary"><div class="number">${demandes.length}</div><div class="label">Demandes en attente</div></div></div>
+                    <div class="col-md-3"><div class="stat-card bg-success"><div class="number">${enCours.length}</div><div class="label">Emprunts en cours</div></div></div>
+                    <div class="col-md-3"><div class="stat-card bg-info"><div class="number">${disponibles}</div><div class="label">Disponibles</div></div></div>
+                    <div class="col-md-3"><div class="stat-card bg-secondary"><div class="number">${totalExemplaires}</div><div class="label">Total exemplaires</div></div></div>`;
+            } catch(e) {}
+        }
+
+        async function chargerDemandes() {
+            try {
+                const response = await fetch('/api/emprunts/tous/demandes', {headers: {'Authorization': 'Bearer ' + token}});
+                const emprunts = await response.json();
+                let html = '<table class="table"><thead><tr><th>Étudiant</th><th>Ouvrage</th><th>Code-barres</th><th>Retour prévu</th><th>Actions</th></tr></thead><tbody>';
+                if (emprunts.length === 0) {
+                    html += '<tr><td colspan="5">✅ Aucune demande</td></tr>';
+                } else {
+                    emprunts.forEach(e => {
+                        html += `<tr><td>${e.nomEtudiant}<br><small>${e.matriculeEtudiant}</small></td><td>${e.titreOuvrage}</td><td><code>${e.codeBarresExemplaire}</code></td><td>${new Date(e.dateRetourPrevue).toLocaleDateString('fr-FR')}</td><td><button class="btn btn-success btn-sm" onclick="validerEmprunt(${e.id})">✅ Valider</button></td></tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                document.getElementById('tableDemandes').innerHTML = html;
+            } catch(e) { document.getElementById('tableDemandes').innerHTML = '<div class="alert alert-danger">Erreur</div>'; }
+        }
+
+        async function chargerEnCours() {
+            try {
+                const response = await fetch('/api/emprunts/tous/en-cours', {headers: {'Authorization': 'Bearer ' + token}});
+                const emprunts = await response.json();
+                let html = '<table class="table"><thead><tr><th>Étudiant</th><th>Ouvrage</th><th>Code-barres</th><th>Retour prévu</th><th>Statut</th></tr></thead><tbody>';
+                if (emprunts.length === 0) {
+                    html += '<tr><td colspan="5">Aucun emprunt en cours</td></tr>';
+                } else {
+                    emprunts.forEach(e => {
+                        const joursRestants = Math.ceil((new Date(e.dateRetourPrevue) - new Date()) / (1000*60*60*24));
+                        html += `<tr><td>${e.nomEtudiant}</td><td>${e.titreOuvrage}</td><td><code>${e.codeBarresExemplaire}</code></td><td>${new Date(e.dateRetourPrevue).toLocaleDateString('fr-FR')} (${joursRestants}j)</td><td><span class="badge bg-primary">En cours</span></td></tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                document.getElementById('tableEnCours').innerHTML = html;
+            } catch(e) { document.getElementById('tableEnCours').innerHTML = '<div class="alert alert-danger">Erreur</div>'; }
+        }
+
+        async function validerEmprunt(id) {
+            if (!confirm('Valider cet emprunt ?')) return;
+            await fetch('/api/emprunts/' + id + '/valider', {method: 'PUT', headers: {'Authorization': 'Bearer ' + token}});
+            chargerDemandes(); chargerEnCours(); chargerStats();
+        }
+
+        async function enregistrerRetour(e) {
+            e.preventDefault();
+            const codeBarres = document.getElementById('codeBarresRetour').value.trim();
+            try {
+                const response = await fetch('/api/emprunts/retour/code/' + encodeURIComponent(codeBarres), {
+                    method: 'POST', headers: {'Authorization': 'Bearer ' + token}
+                });
+                const data = await response.json();
+                document.getElementById('messageRetour').innerHTML = 
+                    `<div class="alert alert-${response.ok ? 'success' : 'danger'}">${data.message || 'Retour enregistré'}</div>`;
+                if (response.ok) { document.getElementById('codeBarresRetour').value = ''; chargerStats(); chargerDemandes(); chargerEnCours(); }
+            } catch(e) { document.getElementById('messageRetour').innerHTML = '<div class="alert alert-danger">Erreur</div>'; }
+        }
+
+        async function ajouterOuvrage(e) {
+            e.preventDefault();
+            await fetch('/api/ouvrages', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({isbn: document.getElementById('isbn').value, titre: document.getElementById('titre').value, auteur: document.getElementById('auteur').value, resume:'', motsCles:'', datePublication: new Date().toISOString().split('T')[0]})
+            });
+            document.getElementById('messageOuvrage').innerHTML = '<div class="alert alert-success">✅ Ouvrage ajouté</div>';
+            document.getElementById('isbn').value = ''; document.getElementById('titre').value = ''; document.getElementById('auteur').value = '';
+            chargerOuvragesSelect(); chargerStats();
+        }
+
+        async function chargerOuvragesSelect() {
+            const response = await fetch('/api/ouvrages');
+            const ouvrages = await response.json();
+            document.getElementById('ouvrageId').innerHTML = '<option value="">Choisir un ouvrage</option>' + ouvrages.map(o => `<option value="${o.id}">${o.titre}</option>`).join('');
+        }
+
+        async function ajouterExemplaire(e) {
+            e.preventDefault();
+            await fetch('/api/ouvrages/' + document.getElementById('ouvrageId').value + '/exemplaires', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({codeBarres: document.getElementById('codeBarres').value, rayon: document.getElementById('rayon').value})
+            });
+            document.getElementById('messageExemplaire').innerHTML = '<div class="alert alert-success">✅ Exemplaire ajouté</div>';
+            document.getElementById('codeBarres').value = ''; document.getElementById('rayon').value = ''; chargerStats();
+        }
+
+        function logout() { localStorage.clear(); window.location.href = '/'; }
+
+        chargerStats();
+        chargerDemandes();
+        chargerEnCours();
+        chargerOuvragesSelect();
+    </script>
+</body>
+</html>

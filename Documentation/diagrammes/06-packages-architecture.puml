@@ -1,0 +1,134 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam packageFontSize 12
+skinparam packageFontStyle bold
+
+title Architecture en Couches - Spring Boot
+
+package "Présentation (Couche Web)" #E8F5E9 {
+  
+  package "Controllers" #C8E6C9 {
+    [OuvrageController]
+    [EmpruntController]
+    [ReservationController]
+    [UtilisateurController]
+    [AuthController]
+    [AdminController]
+    [NotificationController]
+  }
+  
+  package "DTOs" #A5D6A7 {
+    [OuvrageDTO]
+    [EmpruntDTO]
+    [ReservationDTO]
+    [UtilisateurDTO]
+    [LoginRequest]
+    [RegisterRequest]
+  }
+  
+  package "Mappers" #81C784 {
+    [OuvrageMapper]
+    [EmpruntMapper]
+    [UtilisateurMapper]
+  }
+}
+
+package "Métier (Couche Service)" #FFF3E0 {
+  
+  package "Services" #FFE0B2 {
+    [OuvrageService]
+    [EmpruntService]
+    [ReservationService]
+    [UtilisateurService]
+    [PenaliteService]
+    [NotificationService]
+    [RapportService]
+  }
+  
+  package "Interfaces" #FFCC80 {
+    interface IOuvrageService
+    interface IEmpruntService
+    interface IReservationService
+    interface INotificationService
+  }
+}
+
+package "Domaine (Couche Métier)" #E3F2FD {
+  
+  package "Entities" #BBDEFB {
+    [Utilisateur]
+    [Etudiant]
+    [Bibliothecaire]
+    [Administrateur]
+    [Ouvrage]
+    [Exemplaire]
+    [Categorie]
+    [Emprunt]
+    [Reservation]
+    [Penalite]
+  }
+  
+  package "Enums" #90CAF9 {
+    [StatutExemplaire]
+    [StatutEmprunt]
+    [StatutReservation]
+    [RoleUtilisateur]
+  }
+  
+  package "Exceptions" #64B5F6 {
+    [QuotaAtteintException]
+    [CompteSuspenduException]
+    [OuvrageIndisponibleException]
+    [ReservationExpireeException]
+    [DejaDansFileException]
+  }
+}
+
+package "Infrastructure (Couche Accès Données)" #FCE4EC {
+  
+  package "Repositories" #F8BBD0 {
+    [UtilisateurRepository]
+    [OuvrageRepository]
+    [ExemplaireRepository]
+    [EmpruntRepository]
+    [ReservationRepository]
+    [PenaliteRepository]
+    [CategorieRepository]
+  }
+  
+  package "Config" #F48FB1 {
+    [SecurityConfig]
+    [JwtConfig]
+    [EmailConfig]
+    [SwaggerConfig]
+  }
+  
+  package "Security" #F06292 {
+    [JwtTokenProvider]
+    [UserDetailsServiceImpl]
+    [JwtAuthenticationFilter]
+  }
+}
+
+package "Commun (Cross-Cutting)" #F3E5F5 {
+  [AuditListener]
+  [LoggingAspect]
+  [GlobalExceptionHandler]
+  [ApiResponse]
+}
+
+' Relations entre couches
+[Controllers] ..> [Services] : utilise
+[DTOs] ..> [Controllers] : transporte
+[Mappers] ..> [DTOs] : convertit
+[Mappers] ..> [Entities] : convertit
+
+[Services] ..> [Interfaces] : implémente
+[Services] ..> [Repositories] : utilise
+[Services] ..> [Entities] : manipule
+
+[Repositories] ..> [Entities] : persiste
+
+[GlobalExceptionHandler] ..> [Exceptions] : gère
+
+@enduml

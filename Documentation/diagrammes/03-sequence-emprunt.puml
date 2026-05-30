@@ -1,0 +1,73 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+title Emprunter un ouvrage disponible (UC04) - Scénario nominal
+
+actor "Étudiant" as E
+participant "Interface Web" as UI
+participant "EmpruntController" as EC
+participant "EtudiantService" as ES
+participant "ExemplaireService" as EXS
+participant "EmpruntService" as EMS
+database "Base de données" as DB
+
+E -> UI : Clique sur "Emprunter"\n(ouvrage X, exemplaire Y)
+activate UI
+
+UI -> EC : POST /emprunts\n{idEtudiant, idExemplaire}
+activate EC
+
+== Vérification des règles métier ==
+
+EC -> EMS : peutEmprunter(idEtudiant)
+activate EMS
+
+EMS -> ES : getNbEmpruntsEnCours(idEtudiant)
+activate ES
+ES -> DB : SELECT COUNT(*) FROM Emprunt\nWHERE etudiant_id = ?\nAND statut = 'EN_COURS'
+DB --> ES : 2 (quota non atteint)
+ES --> EMS : nbEmprunts = 2
+deactivate ES
+
+EMS -> ES : estSuspendu(idEtudiant)
+activate ES
+ES -> DB : SELECT dateFinSuspension\nFROM Etudiant WHERE id = ?
+DB --> ES : null
+ES --> EMS : false
+deactivate ES
+
+EMS -> EXS : estDisponible(idExemplaire)
+activate EXS
+EXS -> DB : SELECT statut FROM Exemplaire\nWHERE id = ?
+DB --> EXS : DISPONIBLE
+EXS --> EMS : true
+deactivate EXS
+
+EMS --> EC : emprunt autorisé
+deactivate EMS
+
+== Création de l'emprunt ==
+
+EC -> EMS : creerEmprunt(idEtudiant, idExemplaire)
+activate EMS
+
+EMS -> DB : INSERT INTO Emprunt\n(etudiant_id, exemplaire_id,\ndateDebut, dateRetourPrevue,\nstatut)\nVALUES (?, ?, NOW(),\nNOW()+14j, 'DEMANDE')
+DB --> EMS : OK
+
+EMS --> EC : emprunt créé (statut DEMANDE)
+deactivate EMS
+
+note right #FFFACD
+  L'emprunt est en statut "DEMANDE"
+  en attendant la validation
+  physique par le bibliothécaire.
+end note
+
+EC --> UI : 201 Created
+deactivate EC
+
+UI --> E : "Demande enregistrée.\nPrésentez le livre au\nbibliothécaire pour validation."
+deactivate UI
+
+@enduml

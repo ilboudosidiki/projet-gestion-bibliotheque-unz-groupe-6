@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Bibliothèque UNZ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="d-flex align-items-center justify-content-center" style="min-height:100vh;background:linear-gradient(135deg,#1a237e,#283593)">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-lg">
+                    <div class="card-header text-center py-3">
+                        <h4>📝 Inscription</h4>
+                        <p class="mb-0">Créez votre compte étudiant</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="alertBox"></div>
+                        <form id="registerForm" onsubmit="register(event)" novalidate>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Nom</label>
+                                    <input type="text" id="nom" class="form-control" 
+                                           placeholder="Votre nom" required>
+                                    <div class="invalid-feedback">Champ obligatoire</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Prénom</label>
+                                    <input type="text" id="prenom" class="form-control" 
+                                           placeholder="Votre prénom" required>
+                                    <div class="invalid-feedback">Champ obligatoire</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <input type="email" id="email" class="form-control" 
+                                       placeholder="exemple@unz.bf" required>
+                                <div class="invalid-feedback">Email invalide</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Matricule</label>
+                                <input type="text" id="matricule" class="form-control" 
+                                       placeholder="Ex: ETU2026001" required>
+                                <div class="invalid-feedback">Champ obligatoire</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mot de passe</label>
+                                <div class="input-group">
+                                    <input type="password" id="password" class="form-control" 
+                                           placeholder="Minimum 6 caractères" required minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button" 
+                                            onclick="togglePassword()">👁️</button>
+                                </div>
+                                <div class="invalid-feedback">Minimum 6 caractères</div>
+                                <div id="passwordStrength" class="mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Confirmer le mot de passe</label>
+                                <input type="password" id="confirmPassword" class="form-control" 
+                                       placeholder="Répétez le mot de passe" required>
+                                <div class="invalid-feedback" id="confirmError">Les mots de passe ne correspondent pas</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-2 mb-3" id="submitBtn">
+                                Créer mon compte
+                            </button>
+                        </form>
+                        <div class="text-center">
+                            <p>Déjà un compte ? <a href="/login">Se connecter</a></p>
+                            <a href="/" class="text-muted">← Retour à l'accueil</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('password').addEventListener('input', function() {
+            const pwd = this.value;
+            let strength = '';
+            if (pwd.length >= 8) strength = '🟢 Fort';
+            else if (pwd.length >= 6) strength = '🟡 Moyen';
+            else if (pwd.length > 0) strength = '🔴 Faible';
+            document.getElementById('passwordStrength').textContent = strength;
+        });
+
+        async function register(e) {
+            e.preventDefault();
+            const nom = document.getElementById('nom').value.trim();
+            const prenom = document.getElementById('prenom').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const matricule = document.getElementById('matricule').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (!nom || !prenom || !email || !matricule || !password) {
+                showAlert('danger', 'Tous les champs sont obligatoires');
+                return;
+            }
+
+            if (password !== confirm) {
+                showAlert('danger', 'Les mots de passe ne correspondent pas');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('danger', 'Le mot de passe doit avoir au moins 6 caractères');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Inscription...';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({nom, prenom, email, motDePasse: password, matricule})
+                });
+                const data = await response.json();
+
+                if (data.message && data.message.includes('succès')) {
+                    showAlert('success', '✅ Compte créé avec succès ! Redirection...');
+                    setTimeout(() => window.location.href = '/login', 1500);
+                } else {
+                    showAlert('danger', data.message || 'Erreur lors de l\'inscription');
+                }
+            } catch(e) {
+                showAlert('danger', 'Erreur de connexion au serveur');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Créer mon compte';
+            }
+        }
+
+        function showAlert(type, message) {
+            document.getElementById('alertBox').innerHTML = 
+                `<div class="alert alert-${type}">${message}</div>`;
+        }
+
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            pwd.type = pwd.type === 'password' ? 'text' : 'password';
+        }
+    </script>
+</body>
+</html>

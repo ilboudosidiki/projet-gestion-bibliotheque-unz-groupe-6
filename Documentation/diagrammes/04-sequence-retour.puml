@@ -1,0 +1,104 @@
+@startuml
+skinparam sequenceMessageAlign center
+
+title Retour avec retard - UC07 → UC11 → UC12 → UC20
+
+actor "Bibliothécaire" as B
+participant "Interface Gestion" as UI
+participant "EmpruntController" as EC
+participant "EmpruntService" as EMS
+participant "PenaliteService" as PS
+participant "EtudiantService" as ES
+participant "ReservationService" as RS
+participant "NotificationService" as NS
+database "Base de données" as DB
+
+B -> UI : Scanne le code-barres\nde l'exemplaire retourné
+activate UI
+
+UI -> EC : POST /retours\n{idExemplaire}
+activate EC
+
+== Étape 1 : Enregistrement du retour ==
+
+EC -> EMS : enregistrerRetour(idExemplaire)
+activate EMS
+
+EMS -> DB : SELECT * FROM Emprunt\nWHERE exemplaire_id = ?\nAND statut = 'EN_COURS'
+DB --> EMS : emprunt trouvé\n(dateRetourPrevue = 10/05/2026)
+
+EMS -> DB : UPDATE Emprunt SET\nstatut = 'RETOURNE',\ndateRetourEffective = NOW()\n(15/05/2026)
+DB --> EMS : OK
+
+== Étape 2 : Calcul du retard ==
+
+EMS -> EMS : calculerRetard()\ndateEffective - datePrevue
+note right #FFB6C1
+  Retard = 5 jours
+  → Déclenchement UC11
+end note
+
+EMS -> PS : appliquerPenalite(idEtudiant,\nemprunt, 5 jours)
+activate PS
+
+PS -> DB : INSERT INTO Penalite\n(etudiant_id, emprunt_id,\ndateDebut, dureeJours, motif)\nVALUES (?, ?, NOW(), 5,\n'Retard de retour')
+DB --> PS : OK
+
+PS --> EMS : pénalité enregistrée
+deactivate PS
+
+== Étape 3 : Suspension automatique ==
+
+EMS -> ES : suspendreCompte(idEtudiant, 5 jours)
+activate ES
+
+ES -> ES : calculerDateFinSuspension()\n= NOW() + 5 jours = 20/05/2026
+
+ES -> DB : UPDATE Etudiant SET\ndateFinSuspension = '20/05/2026'
+DB --> ES : OK
+
+ES --> EMS : compte suspendu jusqu'au 20/05
+deactivate ES
+
+== Étape 4 : Notification suspension ==
+
+EMS -> NS : notifierSuspension(idEtudiant,\ndateFin)
+activate NS
+
+NS -> NS : Envoi email :\n"Compte suspendu jusqu'au\n20/05/2026 pour retard\nde 5 jours."
+
+NS --> EMS : email envoyé
+deactivate NS
+
+== Étape 5 : Vérification file d'attente ==
+
+EMS -> RS : verifierReservations(idOuvrage)
+activate RS
+
+RS -> DB : SELECT * FROM Reservation\nWHERE ouvrage_id = ?\nAND statut = 'EN_ATTENTE'\nORDER BY dateReservation ASC
+DB --> RS : 1 réservation trouvée
+
+RS -> DB : UPDATE Reservation SET\nstatut = 'PRETE_A_RECUPERER',\ndateExpiration = NOW() + 48h\nWHERE id = ?
+DB --> RS : OK
+
+RS -> NS : notifierDisponibilite(idEtudiant)
+NS -> NS : Envoi email :\n"Ouvrage disponible,\nà récupérer sous 48h."
+
+RS --> EMS : file d'attente traitée
+deactivate RS
+
+== Étape 6 : Mise à jour statut exemplaire ==
+
+EMS -> DB : UPDATE Exemplaire SET\nstatut = 'RESERVE'\nWHERE id = ?
+DB --> EMS : OK
+
+EMS --> EC : retour traité avec succès
+deactivate EMS
+
+EC --> UI : 200 OK
+deactivate EC
+
+UI --> B : "Retour validé.\nRetard : 5 jours.\nCompte suspendu jusqu'au\n20/05/2026.\n1 réservation notifiée."
+deactivate UI
+
+@enduml

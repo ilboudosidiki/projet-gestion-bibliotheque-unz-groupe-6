@@ -1,0 +1,161 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+
+package "Utilisateurs" #F0F8FF {
+  
+  abstract class Utilisateur {
+    - id: Long
+    - nom: String
+    - prenom: String
+    - email: String
+    - motDePasse: String
+    - estActif: Boolean
+    - dateCreation: LocalDateTime
+    --
+    + sAuthentifier(email, motDePasse): Boolean
+    + seDeconnecter(): void
+    + modifierProfil(): void
+  }
+  
+  class Etudiant {
+    - matricule: String
+    - dateFinSuspension: LocalDate
+    --
+    + peutEmprunter(): Boolean
+    + peutReserver(): Boolean
+    + getNbEmpruntsEnCours(): int
+    + estSuspendu(): Boolean
+  }
+  
+  class Bibliothecaire {
+    - numeroEmploye: String
+    --
+    + validerEmprunt(etudiant, exemplaire): Emprunt
+    + enregistrerRetour(exemplaire): void
+    + gererCatalogue(): void
+  }
+  
+  class Administrateur {
+    - niveauAcces: String
+    --
+    + gererUtilisateurs(): void
+    + genererRapports(): Rapport
+    + leverSuspension(etudiant, motif): void
+  }
+}
+
+package "Documents" #FFF8DC {
+  
+  class Ouvrage {
+    - id: Long
+    - isbn: String
+    - titre: String
+    - auteur: String
+    - resume: String
+    - motsCles: String
+    - datePublication: LocalDate
+    --
+    + getNbExemplairesDisponibles(): int
+    + estDisponible(): Boolean
+    + rechercher(motCle): List<Ouvrage>
+  }
+  
+  class Exemplaire {
+    - id: Long
+    - codeBarres: String
+    - statut: StatutExemplaire
+    - rayon: String
+    - dateAcquisition: LocalDate
+    --
+    + estEmpruntable(): Boolean
+    + changerStatut(statut): void
+  }
+  
+  class Categorie {
+    - id: Long
+    - nom: String
+    - description: String
+    --
+    + getOuvrages(): List<Ouvrage>
+  }
+  
+  enum StatutExemplaire {
+    DISPONIBLE
+    EMPRUNTE
+    RESERVE
+    PERDU
+  }
+}
+
+package "Opérations" #FFF0F5 {
+  
+  class Emprunt {
+    - id: Long
+    - dateDebut: LocalDateTime
+    - dateRetourPrevue: LocalDate
+    - dateRetourEffective: LocalDate
+    - statut: StatutEmprunt
+    --
+    + calculerRetard(): int
+    + prolonger(): Boolean
+    + getDureeEmprunt(): int
+  }
+  
+  class Reservation {
+    - id: Long
+    - dateReservation: LocalDateTime
+    - dateExpiration: LocalDateTime
+    - positionFile: int
+    - statut: StatutReservation
+    --
+    + estExpiree(): Boolean
+    + notifierDisponibilite(): void
+    + annuler(): void
+  }
+  
+  class Penalite {
+    - id: Long
+    - dateDebut: LocalDate
+    - dureeJours: int
+    - motif: String
+    - dateFin: LocalDate
+    --
+    + estActive(): Boolean
+    + calculerDateFin(): LocalDate
+    + getJoursRestants(): int
+  }
+  
+  enum StatutEmprunt {
+    DEMANDE
+    EN_COURS
+    RETOURNE
+    ANNULE
+  }
+  
+  enum StatutReservation {
+    EN_ATTENTE
+    PRETE_A_RECUPERER
+    EXPIREE
+    RECUPEREE
+    ANNULEE
+  }
+}
+
+Utilisateur <|-- Etudiant
+Utilisateur <|-- Bibliothecaire
+Utilisateur <|-- Administrateur
+
+Ouvrage "1" --> "*" Exemplaire : possède >
+Categorie "1" --> "*" Ouvrage : contient >
+Ouvrage "1" --> "*" Reservation : concerne >
+
+Etudiant "1" --> "0..3" Emprunt : effectue >
+Exemplaire "1" --> "0..1" Emprunt : est_emprunté_dans >
+Etudiant "1" --> "*" Reservation : effectue >
+Emprunt "1" --> "0..1" Penalite : génère >
+Etudiant "1" --> "*" Penalite : subit >
+
+Bibliothecaire "1" --> "*" Emprunt : valide >
+
+@enduml
