@@ -97,6 +97,7 @@ public class AuthController {
         response.put("email", utilisateur.getEmail());
         response.put("nom", utilisateur.getNomComplet());
         response.put("role", utilisateur.getRole().name());
+        response.put("id", utilisateur.getId());
 
         return ResponseEntity.ok(response);
     }
