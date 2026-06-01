@@ -121,19 +121,19 @@
             if (!confirm('Voulez-vous emprunter cet ouvrage ?')) return;
             
             try {
-                const response = await fetch('/api/emprunts', {
+                const response = await fetch('/api/emprunts/ouvrage', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({etudiantId: currentUser.id, exemplaireId: ouvrageId})
+                    body: JSON.stringify({etudiantId: currentUser.id, ouvrageId: ouvrageId})
                 });
                 const data = await response.json();
                 
                 if (response.ok) {
                     alert('✅ Emprunt effectué ! Retour prévu le ' + 
-                          new Date(data.dateRetourPrevue).toLocaleDateString('fr-FR'));
+                        new Date(data.dateRetourPrevue).toLocaleDateString('fr-FR'));
                     chargerOuvrages();
                 } else {
                     alert('❌ ' + (data.message || 'Erreur lors de l\'emprunt'));

@@ -15,6 +15,7 @@ import com.bibliotheque.exception.QuotaAtteintException;
 import com.bibliotheque.repository.EmpruntRepository;
 import com.bibliotheque.repository.EtudiantRepository;
 import com.bibliotheque.repository.ExemplaireRepository;
+import com.bibliotheque.repository.OuvrageRepository;
 import com.bibliotheque.repository.ReservationRepository;
 import com.bibliotheque.service.interfaces.IEmpruntService;
 import com.bibliotheque.service.interfaces.INotificationService;
@@ -32,6 +33,7 @@ public class EmpruntServiceImpl implements IEmpruntService {
     private final EmpruntRepository empruntRepository;
     private final EtudiantRepository etudiantRepository;
     private final ExemplaireRepository exemplaireRepository;
+    private final OuvrageRepository ouvrageRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ReservationRepository reservationRepository;
     private final INotificationService notificationService;
@@ -39,17 +41,19 @@ public class EmpruntServiceImpl implements IEmpruntService {
     public EmpruntServiceImpl(EmpruntRepository empruntRepository,
                             EtudiantRepository etudiantRepository,
                             ExemplaireRepository exemplaireRepository,
+                            OuvrageRepository ouvrageRepository,
                             ApplicationEventPublisher eventPublisher,
                             ReservationRepository reservationRepository,
                             INotificationService notificationService) {
         this.empruntRepository = empruntRepository;
         this.etudiantRepository = etudiantRepository;
         this.exemplaireRepository = exemplaireRepository;
+        this.ouvrageRepository = ouvrageRepository;
         this.eventPublisher = eventPublisher;
         this.reservationRepository = reservationRepository;
         this.notificationService = notificationService;
     }
-        
+    
     @Override
     @Transactional
     public Emprunt creerEmprunt(Long etudiantId, Long exemplaireId) {
@@ -69,6 +73,44 @@ public class EmpruntServiceImpl implements IEmpruntService {
         
         if (!exemplaire.estEmpruntable()) {
             throw new OuvrageIndisponibleException("Cet exemplaire n'est pas disponible");
+        }
+        
+        Emprunt emprunt = new Emprunt();
+        emprunt.setEtudiant(etudiant);
+        emprunt.setExemplaire(exemplaire);
+        emprunt.setDateRetourPrevue(LocalDate.now().plusDays(14));
+        emprunt.setStatut(StatutEmprunt.DEMANDE);
+        
+        exemplaire.changerStatut(StatutExemplaire.EMPRUNTE);
+        exemplaireRepository.save(exemplaire);
+        
+        return empruntRepository.save(emprunt);
+    }
+
+    @Transactional
+    public Emprunt creerEmpruntParOuvrage(Long etudiantId, Long ouvrageId) {
+        Etudiant etudiant = etudiantRepository.findById(etudiantId)
+            .orElseThrow(() -> new RuntimeException("Étudiant non trouvé"));
+        
+        Ouvrage ouvrage = ouvrageRepository.findById(ouvrageId)
+            .orElseThrow(() -> new RuntimeException("Ouvrage non trouvé"));
+        
+        List<Exemplaire> disponibles = exemplaireRepository
+            .findByOuvrageAndStatut(ouvrage, StatutExemplaire.DISPONIBLE);
+        
+        if (disponibles.isEmpty()) {
+            throw new OuvrageIndisponibleException("Aucun exemplaire disponible pour cet ouvrage");
+        }
+        
+        Exemplaire exemplaire = disponibles.get(0);
+        
+        if (etudiant.estSuspendu()) {
+            throw new CompteSuspenduException(
+                "Compte suspendu jusqu'au " + etudiant.getDateFinSuspension());
+        }
+        
+        if (!peutEmprunter(etudiantId)) {
+            throw new QuotaAtteintException("Limite maximale de 3 emprunts atteinte");
         }
         
         Emprunt emprunt = new Emprunt();
@@ -106,20 +148,17 @@ public class EmpruntServiceImpl implements IEmpruntService {
         emprunt.setStatut(StatutEmprunt.RETOURNE);
         empruntRepository.save(emprunt);
         
-        // Vérifier les réservations
         Ouvrage ouvrage = exemplaire.getOuvrage();
         List<Reservation> fileAttente = reservationRepository
             .findByOuvrageAndStatutOrderByDateReservationAsc(ouvrage, StatutReservation.EN_ATTENTE);
         
         if (!fileAttente.isEmpty()) {
-            // Notifier le premier de la file
             Reservation prochaine = fileAttente.get(0);
             prochaine.setStatut(StatutReservation.PRETE_A_RECUPERER);
             prochaine.setDateExpiration(LocalDateTime.now().plusHours(48));
             reservationRepository.save(prochaine);
         }
         
-        // Toujours remettre l'exemplaire en DISPONIBLE
         exemplaire.setStatut(StatutExemplaire.DISPONIBLE);
         exemplaireRepository.save(exemplaire);
         

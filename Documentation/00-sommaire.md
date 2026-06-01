@@ -47,10 +47,12 @@
 
 | Élément | Statut |
 |---------|--------|
-| Structure projet Spring Boot | 🔜 À faire |
-| Product Backlog | 🔜 À faire |
-| Code source | 🔜 À faire |
-| Tests | 🔜 À faire |
+| Structure projet Spring Boot | ✅ Terminé |
+| Product Backlog | ✅ Terminé |
+| Code source (50+ fichiers) | ✅ Terminé |
+| Tests (49 tests) | ✅ Terminé |
+| Interface Web (10 pages) | ✅ Terminé |
+| Déploiement Render | ✅ Terminé |
 
 ---
 
@@ -58,12 +60,22 @@
 
 | Livrable | Statut |
 |----------|--------|
-| Dossier de Conception (PDF) | 🔜 À faire |
-| Rapport Final (PDF) | 🔜 À faire |
-| Vidéo de démonstration | 🔜 À faire |
+| Dossier de Conception (PDF) | ✅ Terminé |
+| Rapport Final (PDF) | ✅ Terminé |
+| Code source (GitHub) | ✅ Terminé |
+| Application en ligne | ✅ https://bibliotheque-unz.onrender.com |
+| Vidéo de démonstration | ✅ Terminé |
 
 ---
 
-**Équipe :** [Noms des 6 étudiants]
+**Équipe :**
+- Sidiki ILBOUDO - Scrum Master
+- Ines GAIGO - Product Owner
+- Pierre DIONOU - Développeur Backend
+- Amira SAVADOGO - Développeuse Backend
+- Epiphanie SOMPOUGDOU - Développeuse Frontend
+- Zakaria DERRA - Développeur Tests
+
 **Méthodologie :** Scrum (Agile)
-**Stack technique :** Java / Spring Boot / MySQL
+**Stack technique :** Java 17 / Spring Boot 4.0.6 / PostgreSQL 16
+**URL :** https://bibliotheque-unz.onrender.com

@@ -7,6 +7,7 @@ import com.bibliotheque.enums.StatutEmprunt;
 import com.bibliotheque.enums.StatutExemplaire;
 import com.bibliotheque.repository.ExemplaireRepository;
 import com.bibliotheque.repository.EmpruntRepository;
+import com.bibliotheque.service.impl.EmpruntServiceImpl;
 import com.bibliotheque.service.interfaces.IEmpruntService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,14 @@ public class EmpruntController {
         Long exemplaireId = request.get("exemplaireId");
 
         Emprunt emprunt = empruntService.creerEmprunt(etudiantId, exemplaireId);
+        return ResponseEntity.ok(toDTO(emprunt));
+    }
+
+    @PostMapping("/ouvrage")
+    public ResponseEntity<?> emprunterParOuvrage(@RequestBody Map<String, Long> request) {
+        Long etudiantId = request.get("etudiantId");
+        Long ouvrageId = request.get("ouvrageId");
+        Emprunt emprunt = ((EmpruntServiceImpl) empruntService).creerEmpruntParOuvrage(etudiantId, ouvrageId);
         return ResponseEntity.ok(toDTO(emprunt));
     }
 

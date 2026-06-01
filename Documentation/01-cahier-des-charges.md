@@ -287,9 +287,11 @@ Objectifs spécifiques :
 | ID | Exigence |
 |----|----------|
 | ENF16 | Backend : Java avec Spring Boot |
-| ENF17 | Base de données : MySQL |
+| ENF17 | Base de données : PostgreSQL 16 |
 | ENF18 | Versionnement : Git + GitHub |
 | ENF19 | Hébergement : Render (ou équivalent gratuit) |
+| ENF20 | Déploiement Docker sur Render |
+| ENF21 | URL de production : https://bibliotheque-unz.onrender.com |
 
 ---
 
