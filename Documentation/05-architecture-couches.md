@@ -187,14 +187,16 @@ Composants :
 | Composant | Technologie |
 |-----------|-------------|
 | Langage | Java 17 |
-| Framework | Spring Boot 3.2.x |
-| Base de données | MySQL 8.x |
+| Framework | Spring Boot 4.0.6 |
+| Base de données | PostgreSQL 16 |
 | ORM | Spring Data JPA / Hibernate |
 | Sécurité | Spring Security + JWT |
+| Frontend | Thymeleaf + Bootstrap 5 |
 | API | REST (JSON) |
 | Tests | JUnit 5 + Mockito |
 | Documentation | Swagger / OpenAPI |
 | Build | Maven |
+| Déploiement | Docker + Render |
 
 ---
 

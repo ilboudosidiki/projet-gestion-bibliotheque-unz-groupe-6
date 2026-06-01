@@ -28,6 +28,12 @@ Enseignant : Dr OUEDRAOGO Moise
 
 ---
 
+## Lien de l'application
+
+https://bibliotheque-unz.onrender.com
+
+---
+
 ## Fonctionnalites
 
 - Recherche simple et avancee d'ouvrages
@@ -36,6 +42,8 @@ Enseignant : Dr OUEDRAOGO Moise
 - Calcul automatique des penalites de retard
 - Notifications par email
 - Generation de rapports statistiques
+- Interface responsive (Bootstrap 5)
+- Dashboard administrateur et bibliothecaire
 
 ---
 
@@ -47,14 +55,25 @@ Enseignant : Dr OUEDRAOGO Moise
 - Thymeleaf + Bootstrap 5
 - Spring Security + JWT
 - JUnit 5 + Mockito
+- Docker
+- Render (hebergement)
 
 ---
 
-## Installation
+## Installation locale
 
 git clone https://github.com/ilboudosidiki/projet-gestion-bibliotheque-unz-groupe-6.git
 cd projet-gestion-bibliotheque-unz-groupe-6/code-source/bibliotheque
 ./mvnw spring-boot:run
+
+Puis acceder a : http://localhost:8080
+
+---
+
+## Deploiement
+
+L'application est hebergee sur Render :
+https://bibliotheque-unz.onrender.com
 
 ---
 

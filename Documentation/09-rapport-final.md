@@ -52,13 +52,14 @@ Les outils utilisés sont GitHub pour le versionnement et la gestion du backlog.
 
 ### 1.4 Technologies
 
-- Backend : Java 17, Spring Boot 3.2.x
-- Base de données : MySQL 8.x
+- Backend : Java 17, Spring Boot 4.0.6
+- Base de données : PostgreSQL 16
 - ORM : Spring Data JPA / Hibernate
 - Sécurité : Spring Security + JWT
+- Frontend : Thymeleaf + Bootstrap 5
 - Tests : JUnit 5, Mockito, MockMvc
-- Documentation API : Swagger / OpenAPI
-- Déploiement : Render
+- Déploiement : Render (Docker)
+- Versionnement : Git + GitHub
 
 ---
 
@@ -231,9 +232,12 @@ les contrôleurs dépendent des interfaces, pas des implémentations.
 ### 4.4 Vue de Déploiement
 
 L'application est déployée sur la plateforme Render avec :
-- Web Service Spring Boot
-- Base de données MySQL
-- Service SMTP externe pour les emails
+- Web Service Spring Boot conteneurisé via Docker
+- Base de données PostgreSQL 16
+- URL de production : https://bibliotheque-unz.onrender.com
+
+Le déploiement est automatisé depuis GitHub : chaque push sur la branche main
+déclenche un rebuild et redéploiement.
 
 ---
 
@@ -405,6 +409,17 @@ Les requêtes de recherche simple par mot-clé (`title LIKE ? OR author LIKE ? O
 - Pagination nécessaire même pour les recherches
 - **Solution :** Ajout d'indexes fulltext sur titre, auteur, thème; utilisation de `FULLTEXT INDEX` en MySQL; pagination obligatoire (max 50 résultats).
 
+**F) Déploiement sur Render**
+
+Le déploiement a rencontré plusieurs obstacles :
+- Render détectait Node.js au lieu de Java
+- Le Dockerfile multi-stage a nécessité plusieurs itérations
+- Les variables d'environnement n'étaient pas lues correctement
+- La configuration JavaMailSender bloquait le démarrage
+- **Solution :** Utilisation d'un Dockerfile avec Maven + JRE, 
+  variables d'environnement passées directement dans le CMD,
+  désactivation de l'auto-configuration mail.
+
 ### 7.2 Difficultés organisationnelles et méthodologiques
 
 **A) Estimation des Story Points**
@@ -485,7 +500,7 @@ Le projet de **Gestion de Bibliothèque Universitaire** a atteint l'ensemble de 
 
 **Livrables remis :**
 1. Code source Java/Spring Boot (500+ lignes métier)
-2. Base de données MySQL avec migrations Flyway
+2. Base de données PostgreSQL avec migrations Hibernate
 3. Frontend responsive (Thymeleaf + Bootstrap)
 4. Documentation technique complète (9 fichiers)
 5. Diagrammes UML (use cases, classes, séquences, déploiement)

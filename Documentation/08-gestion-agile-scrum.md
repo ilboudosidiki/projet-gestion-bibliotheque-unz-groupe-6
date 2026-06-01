@@ -5,14 +5,14 @@
 
 ## 1. Équipe Scrum
 
-| Rôle | Responsabilité |
-|------|----------------|
-| Scrum Master | Facilite les cérémonies, élimine les obstacles |
-| Product Owner | Gère le Product Backlog, priorise les Users Stories |
-| Développeur Backend 1 | Spring Boot, API REST, sécurité JWT |
-| Développeur Backend 2 | Spring Data JPA, base de données MySQL |
-| Développeur Frontend | Interface Thymeleaf/HTML, responsive design |
-| Développeur Tests | Tests unitaires, intégration, couverture >= 65% |
+| Rôle | Membre | Responsabilité |
+|------|--------|----------------|
+| Scrum Master | Sidiki ILBOUDO | Facilite les cérémonies, élimine les obstacles |
+| Product Owner | Ines GAIGO | Gère le Product Backlog, priorise les Users Stories |
+| Développeur Backend | Pierre DIONOU | Spring Boot, API REST, sécurité JWT |
+| Développeuse Backend | Amira SAVADOGO | Spring Data JPA, base de données PostgreSQL |
+| Développeuse Frontend | Epiphanie SOMPOUGDOU | Interface Thymeleaf/Bootstrap, responsive design |
+| Développeur Tests | Zakaria DERRA | Tests unitaires, intégration, couverture >= 65% |
 
 ---
 

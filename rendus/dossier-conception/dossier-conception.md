@@ -84,6 +84,7 @@ configure le système.
 - Minimum 4 Design Patterns
 - Couverture de tests supérieure ou égale à 65%
 - Code versionné avec Git
+- Déploiement continu via Docker sur Render
 
 ---
 
@@ -236,7 +237,8 @@ Architecture en 4 couches :
 
 ### Vue Physique
 
-Déploiement sur Render avec Web Service Spring Boot et base MySQL.
+Déploiement sur Render avec Web Service Spring Boot et base PostgreSQL 16.
+URL de production : https://bibliotheque-unz.onrender.com
 
 [Insérer l'image : diagrammes/images/07-deploiement.png]
 
@@ -267,6 +269,19 @@ O - Ouvert/Fermé : Interfaces permettant l'extension sans modification
 L - Substitution de Liskov : Sous-classes substituables partout
 I - Ségrégation des Interfaces : Interfaces fines et spécifiques
 D - Inversion des Dépendances : Injection par constructeur
+
+---
+
+## ÉQUIPE
+
+| Membre | Rôle |
+|--------|------|
+| Sidiki ILBOUDO | Scrum Master |
+| Ines GAIGO | Product Owner |
+| Pierre DIONOU | Développeur Backend |
+| Amira SAVADOGO | Développeuse Backend |
+| Epiphanie SOMPOUGDOU | Développeuse Frontend |
+| Zakaria DERRA | Développeur Tests |
 
 ---
 
