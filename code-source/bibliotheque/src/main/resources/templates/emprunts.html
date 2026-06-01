@@ -112,7 +112,7 @@
 
         async function chargerEmpruntsEnCours() {
             try {
-                const response = await fetch('/api/emprunts/etudiant/1/en-cours', {
+                const response = await fetch('/api/emprunts/etudiant/' + (currentUser.id || 1) + '/en-cours', {
                     headers: {'Authorization': 'Bearer ' + token}
                 });
                 const emprunts = await response.json();
@@ -177,7 +177,7 @@
 
         async function chargerHistorique() {
             try {
-                const response = await fetch('/api/emprunts/etudiant/1/historique', {
+                const response = await fetch('/api/emprunts/etudiant/' + (currentUser.id || 1) + '/historique', {
                     headers: {'Authorization': 'Bearer ' + token}
                 });
                 const emprunts = await response.json();

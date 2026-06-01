@@ -5,8 +5,10 @@ import com.bibliotheque.entity.Ouvrage;
 import com.bibliotheque.enums.StatutExemplaire;
 import com.bibliotheque.repository.ExemplaireRepository;
 import com.bibliotheque.repository.OuvrageRepository;
+import com.bibliotheque.repository.ReservationRepository;
 import com.bibliotheque.service.interfaces.IOuvrageService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -14,11 +16,14 @@ public class OuvrageServiceImpl implements IOuvrageService {
     
     private final OuvrageRepository ouvrageRepository;
     private final ExemplaireRepository exemplaireRepository;
-    
-    public OuvrageServiceImpl(OuvrageRepository ouvrageRepository, 
-                               ExemplaireRepository exemplaireRepository) {
+    private final ReservationRepository reservationRepository;
+
+    public OuvrageServiceImpl(OuvrageRepository ouvrageRepository,
+                            ExemplaireRepository exemplaireRepository,
+                            ReservationRepository reservationRepository) {
         this.ouvrageRepository = ouvrageRepository;
         this.exemplaireRepository = exemplaireRepository;
+        this.reservationRepository = reservationRepository;
     }
     
     @Override
@@ -41,8 +46,19 @@ public class OuvrageServiceImpl implements IOuvrageService {
     }
     
     @Override
+    @Transactional
     public void supprimerOuvrage(Long id) {
-        ouvrageRepository.deleteById(id);
+        Ouvrage ouvrage = ouvrageRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Ouvrage non trouvé"));
+        
+        // Supprimer les réservations liées
+        reservationRepository.deleteAll(ouvrage.getReservations());
+        
+        // Supprimer les exemplaires liés
+        exemplaireRepository.deleteAll(ouvrage.getExemplaires());
+        
+        // Supprimer l'ouvrage
+        ouvrageRepository.delete(ouvrage);
     }
     
     @Override

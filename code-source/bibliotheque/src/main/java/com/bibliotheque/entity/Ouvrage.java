@@ -43,11 +43,11 @@ public class Ouvrage {
     @JoinColumn(name = "categorie_id")
     private Categorie categorie;
     
-    @OneToMany(mappedBy = "ouvrage", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "ouvrage", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Exemplaire> exemplaires;
 
-    @OneToMany(mappedBy = "ouvrage")
+    @OneToMany(mappedBy = "ouvrage", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Reservation> reservations;
 
